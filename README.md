@@ -47,6 +47,13 @@ kubectl create secret generic cloudflare \
   --from-literal=TOKEN=your-api-token
 ```
 
+and finally, apply the Cloudflare Tunnel and Gateway configuration:
+
+```bash
+kubectl apply -f infrastructure/gateway/gateway-class.yaml
+kubectl apply -f infrastructure/gateway/gateway.yaml
+```
+
 ## Installing ArgoCD
 
 ```bash
@@ -75,15 +82,11 @@ argocd login --core
 and finally, apply the bootstrap configuration:
 
 ```bash
+kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
 kubectl apply -f bootstrap/root.yaml
 ```
 
-To check the application sync status:
-
-```bash
-kubectl config set-context --current --namespace=argocd
-argocd app list --core
-```
+This will create an application for `applications` folder in the repo.
 
 ## Cluster Access for Non-Root Users
 

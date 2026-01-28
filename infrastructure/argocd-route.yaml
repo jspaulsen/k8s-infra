@@ -6,14 +6,10 @@ metadata:
 spec:
   parentRefs:
   - name: cloudflare-tunnel
-    namespace: default  # Assuming your Gateway is here
+    namespace: default
   hostnames:
-  - "gitops.yeebs.dev"
+  - gitops.yeebs.dev
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /
-    backendRefs:
+  - backendRefs:
     - name: argocd-server
       port: 80
