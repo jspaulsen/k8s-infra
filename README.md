@@ -59,12 +59,12 @@ kubectl apply -f gateway/cloudflare-gateway-controller.yaml
 kubectl logs -n cloudflare-gateway -l control-plane=controller-manager
 ```
 
-
 ## Installing ArgoCD
 
 ```bash
 kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
 ```
 
 ### Installing the ArgoCD CLI
@@ -88,6 +88,13 @@ and finally, apply the bootstrap configuration:
 
 ```bash
 kubectl apply -f bootstrap/root.yaml
+```
+
+To check the application sync status:
+
+```bash
+kubectl config set-context --current --namespace=argocd
+argocd app list --core
 ```
 
 ## Cluster Access for Non-Root Users
