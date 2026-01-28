@@ -25,7 +25,7 @@ ufw allow from 10.42.0.0/16 to any # pods
 ufw allow from 10.43.0.0/16 to any # services
 ```
 
-## [Deprecated] Setup Cloudflare Kubernetes Gateway
+## Setup Cloudflare Kubernetes Gateway
 
 Install Gateway API CRDs and Cloudflare Kubernetes Gateway. See the documentation for more details:
 
@@ -45,18 +45,6 @@ kubectl create secret generic cloudflare \
   -n cloudflare-gateway \
   --from-literal=ACCOUNT_ID=your-account-id \
   --from-literal=TOKEN=your-api-token
-```
-
-Finally, deploy the Cloudflare Gateway controller:
-
-```bash
-kubectl apply -f gateway/cloudflare-gateway-controller.yaml
-```
-
-### Troubleshooting
-
-```bash
-kubectl logs -n cloudflare-gateway -l control-plane=controller-manager
 ```
 
 ## Installing ArgoCD
