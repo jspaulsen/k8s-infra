@@ -88,6 +88,14 @@ kubectl apply -f bootstrap/root.yaml
 
 This will create an application for `applications` folder in the repo.
 
+### Configure HTTPRoute Health Checks
+
+The Cloudflare Kubernetes Gateway controller doesn't populate HTTPRoute status, which causes ArgoCD to show applications using HTTPRoutes as "Progressing" indefinitely. To fix this, patch the ArgoCD ConfigMap to always consider HTTPRoutes healthy:
+
+```bash
+kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"resource.customizations.health.gateway.networking.k8s.io_HTTPRoute":"hs = {}\nhs.status = \"Healthy\"\nreturn hs\n"}}'
+```
+
 ## Cluster Access for Non-Root Users
 
 See the documentation [here](https://docs.k3s.io/cluster-access) for more information.  There are a few approaches that will work.
