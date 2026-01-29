@@ -6,7 +6,7 @@ metadata:
 spec:
   parentRefs:
   - name: cloudflare-tunnel
-    namespace: default
+    namespace: cloudflare-gateway
   hostnames:
   - gitops.yeebs.dev
   rules:
