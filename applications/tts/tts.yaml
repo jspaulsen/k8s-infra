@@ -68,6 +68,18 @@ spec:
               value: us-west-2
             - name: HF_HOME
               value: /app/.cache/huggingface
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 5
           volumeMounts:
             - name: tts-models
               mountPath: /app/.cache/huggingface
