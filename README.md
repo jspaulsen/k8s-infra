@@ -105,7 +105,6 @@ sudo usermod -aG k3s $USER
 # You must log out and log back in for this to take effect.
 # Or, for the current shell session only, run:
 newgrp k3s
-
 ```
 
 Next, configure the kubeconfig file to be readable by the group.

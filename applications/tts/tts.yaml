@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tts
+  namespace: tts
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tts
+  template:
+    metadata:
+      labels:
+        app: tts
+    spec:
+      containers:
+        - name: tts
+          image: ghcr.io/jspaulsen/tts:main
+          ports:
+            - containerPort: 8081
+          env:
+            - name: PORT
+              value: "8081"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: tts-secrets
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tts-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: ADMIN_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: tts-secrets
+                  key: ADMIN_API_TOKEN
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: tts-secrets
+                  key: API_TOKEN
+            - name: LOGFIRE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: tts-secrets
+                  key: LOGFIRE_TOKEN
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: tts-secrets
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tts-secrets
+                  key: DB_PASSWORD
+            - name: DATABASE_URL
+              value: postgresql://$(DB_USERNAME):$(DB_PASSWORD)@postgres:5432/postgres?sslmode=disable
+            - name: LOG_LEVEL
+              value: DEBUG
+            - name: AWS_EC2_METADATA_DISABLED
+              value: "true"
+            - name: AWS_REGION
+              value: us-west-2
+            - name: AWS_DEFAULT_REGION
+              value: us-west-2
+            - name: HF_HOME
+              value: /app/.cache/huggingface
+          volumeMounts:
+            - name: tts-models
+              mountPath: /app/.cache/huggingface
+      volumes:
+        - name: tts-models
+          persistentVolumeClaim:
+            claimName: tts-models
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tts
+  namespace: tts
+spec:
+  selector:
+    app: tts
+  ports:
+    - port: 80
+      targetPort: 8081
