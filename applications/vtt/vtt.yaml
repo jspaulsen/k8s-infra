@@ -8,17 +8,14 @@ spec:
     - port: 80
       targetPort: 30000
 ---
-apiVersion: discovery.k8s.io/v1
-kind: EndpointSlice
+# In order to avoid having to setup VTT again, we point to the existing docker compose setup.
+apiVersion: v1
+kind: Endpoints
 metadata:
   name: vtt
   namespace: vtt
-  labels:
-    kubernetes.io/service-name: vtt
-addressType: IPv4
-ports:
-  - port: 30000
-endpoints:
-  # In order to avoid having to setup VTT again, we point to the existing docker compose setup.
+subsets:
   - addresses:
-      - "192.168.2.254"
+      - ip: "192.168.2.254"
+    ports:
+      - port: 30000
