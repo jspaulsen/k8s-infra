@@ -7,15 +7,17 @@ spec:
   ports:
     - port: 80
       targetPort: 30000
----
-# In order to avoid having to setup VTT again, we point to the existing docker compose setup.
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: vtt
-  namespace: vtt
-subsets:
-  - addresses:
-      - ip: "192.168.2.254"
-    ports:
-      - port: 30000
+
+# Note: Endpoints are managed manually (excluded from ArgoCD sync).
+# To create/update: kubectl apply -f - <<EOF
+# apiVersion: v1
+# kind: Endpoints
+# metadata:
+#   name: vtt
+#   namespace: vtt
+# subsets:
+#   - addresses:
+#       - ip: "192.168.2.254"
+#     ports:
+#       - port: 30000
+# EOF
