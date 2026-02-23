@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wandb-server
+  namespace: wandb
+  labels:
+    app: wandb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wandb
+  template:
+    metadata:
+      labels:
+        app: wandb
+    spec:
+      containers:
+        - name: wandb
+          image: wandb/local
+          ports:
+            - containerPort: 8080
+          env:
+            - name: WANDB_BASE_URL
+              value: "https://wandb.yeebs.dev"
+            - name: HOST
+              value: "https://wandb.yeebs.dev"
+            - name: WANDB_LICENSE
+              valueFrom:
+                secretKeyRef:
+                  name: wandb-secrets
+                  key: WANDB_LICENSE
+          volumeMounts:
+            - name: wandb-data
+              mountPath: /vol
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: wandb-data
+          persistentVolumeClaim:
+            claimName: wandb-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wandb-server
+  namespace: wandb
+  labels:
+    app: wandb
+spec:
+  selector:
+    app: wandb
+  ports:
+    - port: 80
+      targetPort: 8080

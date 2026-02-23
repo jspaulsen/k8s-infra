@@ -16,6 +16,7 @@ spec:
       containers:
         - name: tts
           image: ghcr.io/jspaulsen/tts:main
+          imagePullPolicy: Always
           ports:
             - containerPort: 8081
           env:

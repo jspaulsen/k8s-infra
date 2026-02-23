@@ -12,9 +12,7 @@ spec:
   ports:
     - port: 80
       targetPort: 3000
-
-# Note: Endpoints are managed manually (excluded from ArgoCD sync).
-# To create/update: kubectl apply -f - <<EOF
+# ---
 # apiVersion: v1
 # kind: Endpoints
 # metadata:
@@ -25,4 +23,3 @@ spec:
 #       - ip: "192.168.2.254"
 #     ports:
 #       - port: 3000
-# EOF
