@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: webhook-route
+  namespace: webhook
+spec:
+  parentRefs:
+    - name: cloudflare-tunnel
+      namespace: cloudflare-gateway
+  hostnames:
+    - webhook.dev.yeebs.dev
+  rules:
+    - backendRefs:
+        - name: webhook
+          port: 80
