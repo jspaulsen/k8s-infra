@@ -143,7 +143,7 @@ data:
     default_permission = READ
     database_uri = sqlite:////mlflow-auth/basic_auth.db
     admin_username = admin
-    admin_password = password
+    admin_password = please-change-me
     authorization_function = mlflow.server.auth:authenticate_request_basic_auth
     enable_signup = false
 ---
