@@ -56,6 +56,9 @@ spec:
         - name: auth-config
           configMap:
             name: mlflow-auth-config
+        - name: auth-data
+          persistentVolumeClaim:
+            claimName: mlflow-auth-data
       containers:
         - name: mlflow
           image: ghcr.io/mlflow/mlflow:latest
@@ -63,6 +66,8 @@ spec:
             - name: auth-config
               mountPath: /etc/mlflow
               readOnly: true
+            - name: auth-data
+              mountPath: /mlflow-auth
           command:
             - /bin/bash
             - -c
@@ -136,9 +141,7 @@ data:
   basic_auth.ini: |
     [mlflow]
     default_permission = READ
-    database_uri = basic_auth.db
-    admin_username = admin
-    admin_password = password
+    database_uri = sqlite:////mlflow-auth/basic_auth.db
     authorization_function = mlflow.server.auth:authenticate_request_basic_auth
     enable_signup = false
 ---
