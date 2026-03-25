@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-server
+  namespace: mlflow
+  labels:
+    app: mlflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      initContainers:
+        - name: create-bucket
+          image: amazon/aws-cli:2.33.25
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for storage to be ready..."
+              for i in $(seq 1 30); do
+                if aws --endpoint-url http://mlflow-storage:9000 s3api head-bucket --bucket mlflow 2>/dev/null; then
+                  echo "Bucket mlflow already exists."
+                  exit 0
+                fi
+                if aws --endpoint-url http://mlflow-storage:9000 s3api create-bucket --bucket mlflow --region us-east-1 2>/dev/null; then
+                  echo "Bucket mlflow created."
+                  exit 0
+                fi
+                echo "Attempt $i: storage not ready, retrying in 5s..."
+                sleep 5
+              done
+              echo "Failed to create bucket after 30 attempts"
+              exit 1
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_DEFAULT_REGION
+              value: us-east-1
+            - name: AWS_S3_ADDRESSING_STYLE
+              value: path
+      containers:
+        - name: mlflow
+          image: ghcr.io/mlflow/mlflow:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              pip install --no-cache-dir psycopg2-binary boto3
+              mlflow server \
+                --backend-store-uri "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@mlflow-postgres:5432/mlflow" \
+                --artifacts-destination "s3://mlflow" \
+                --serve-artifacts \
+                --host "0.0.0.0" \
+                --port "5000"
+          ports:
+            - containerPort: 5000
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: POSTGRES_PASSWORD
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: "http://mlflow-storage:9000"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_DEFAULT_REGION
+              value: us-east-1
+            - name: MLFLOW_S3_IGNORE_TLS
+              value: "true"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-server
+  namespace: mlflow
+  labels:
+    app: mlflow
+spec:
+  selector:
+    app: mlflow
+  ports:
+    - port: 80
+      targetPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-server-local
+  namespace: mlflow
+  labels:
+    app: mlflow
+spec:
+  type: NodePort
+  selector:
+    app: mlflow
+  ports:
+    - port: 80
+      targetPort: 5000
+      nodePort: 30050
