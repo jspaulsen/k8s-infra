@@ -6,6 +6,7 @@ metadata:
   labels:
     app: wandb
 spec:
+  revisionHistoryLimit: 3
   replicas: 1
   selector:
     matchLabels:
