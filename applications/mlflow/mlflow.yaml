@@ -59,8 +59,9 @@ spec:
             - /bin/bash
             - -c
             - |
-              pip install --no-cache-dir psycopg2-binary boto3
+              pip install --no-cache-dir psycopg2-binary boto3 'mlflow[auth]'
               mlflow server \
+                --app-name basic-auth \
                 --backend-store-uri "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@mlflow-postgres:5432/mlflow" \
                 --artifacts-destination "s3://mlflow" \
                 --serve-artifacts \
@@ -96,6 +97,11 @@ spec:
               value: us-east-1
             - name: MLFLOW_S3_IGNORE_TLS
               value: "true"
+            - name: MLFLOW_FLASK_SERVER_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-secrets
+                  key: MLFLOW_FLASK_SECRET_KEY
           livenessProbe:
             httpGet:
               path: /health
