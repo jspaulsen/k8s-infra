@@ -80,7 +80,8 @@ spec:
                 --serve-artifacts \
                 --host "0.0.0.0" \
                 --port "5000" \
-                --allowed-hosts "mlflow.yeebs.dev"
+                --allowed-hosts "mlflow.yeebs.dev" \
+                --allowed-origins "https://mlflow.yeebs.dev"
           ports:
             - containerPort: 5000
           env:
