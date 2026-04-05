@@ -133,7 +133,7 @@ spec:
   ports:
     - port: 8080
       targetPort: http-metrics
-      nodePort: 30080
+      nodePort: 30081
       name: http-metrics
   selector:
     app: kube-state-metrics
