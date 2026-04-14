@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: herald
-          image: ghcr.io/jspaulsen/herald:sha-8a6b3caeaef17444041c873c1197054f4d36f8e9
+          image: ghcr.io/jspaulsen/herald:sha-3246af972b481aec16581b398ee7d1ee94ee5c51
           ports:
             - containerPort: 3002
           env:
@@ -51,6 +51,11 @@ spec:
                 secretKeyRef:
                   name: herald-secrets
                   key: DISCORD_TOKEN
+            - name: LOGFIRE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: herald-secrets
+                  key: LOGFIRE_TOKEN
           livenessProbe:
             httpGet:
               path: /health
