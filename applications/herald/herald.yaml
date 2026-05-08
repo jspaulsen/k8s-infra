@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: herald
-          image: ghcr.io/jspaulsen/herald:sha-ee1f4031b122039df8e412b691ed5084215c5782
+          image: ghcr.io/jspaulsen/herald:sha-cac026acc92d3e7cb86923e531c275dc5db7294b
           ports:
             - containerPort: 3002
           env:
