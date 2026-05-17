@@ -1,13 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 resources:
   - tts.yaml
   - postgres.yaml
   - postgres-pvc.yaml
   - tts-pvc.yaml
   - httproute.yaml
-
 images:
   - name: ghcr.io/jspaulsen/tts
     newTag: main
+    newName: ghcr.io/jspaulsen/tts
+    digest: sha256:beb61797789ee41a2fd0b49205f6ca36fc504b85c816f0989529e5ca8ba358cb
