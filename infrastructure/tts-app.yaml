@@ -3,14 +3,6 @@ kind: Application
 metadata:
   name: tts
   namespace: argocd
-  annotations:
-    argocd-image-updater.argoproj.io/image-list: tts=ghcr.io/jspaulsen/tts
-    argocd-image-updater.argoproj.io/tts.update-strategy: digest
-    argocd-image-updater.argoproj.io/tts.allow-tags: regexp:^main$
-    argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/argocd-image-updater-ssh
-    argocd-image-updater.argoproj.io/write-back-target: kustomization
-    argocd-image-updater.argoproj.io/git-branch: main
-    argocd-image-updater.argoproj.io/git-repository: git@github.com:jspaulsen/k8s-infra.git
 spec:
   project: default
   source:

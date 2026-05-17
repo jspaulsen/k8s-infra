@@ -1,0 +1,23 @@
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: tts
+  namespace: argocd
+spec:
+  applicationRefs:
+    - namePattern: tts
+      writeBackConfig:
+        method: git:secret:argocd/argocd-image-updater-ssh
+        gitConfig:
+          branch: main
+          repository: git@github.com:jspaulsen/k8s-infra.git
+          writeBackTarget: kustomization
+      images:
+        - alias: tts
+          imageName: ghcr.io/jspaulsen/tts
+          commonUpdateSettings:
+            updateStrategy: digest
+            allowTags: regexp:^main$
+          manifestTargets:
+            kustomize:
+              name: ghcr.io/jspaulsen/tts

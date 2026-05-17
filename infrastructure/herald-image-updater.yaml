@@ -1,0 +1,23 @@
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: herald
+  namespace: argocd
+spec:
+  applicationRefs:
+    - namePattern: herald
+      writeBackConfig:
+        method: git:secret:argocd/argocd-image-updater-ssh
+        gitConfig:
+          branch: main
+          repository: git@github.com:jspaulsen/k8s-infra.git
+          writeBackTarget: kustomization
+      images:
+        - alias: herald
+          imageName: ghcr.io/jspaulsen/herald
+          commonUpdateSettings:
+            updateStrategy: newest-build
+            allowTags: regexp:^sha-[0-9a-f]+$
+          manifestTargets:
+            kustomize:
+              name: ghcr.io/jspaulsen/herald
