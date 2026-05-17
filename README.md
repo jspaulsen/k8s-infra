@@ -88,6 +88,14 @@ kubectl apply -f bootstrap/root.yaml
 
 This will create an application for `applications` folder in the repo.
 
+### Installing ArgoCD Image Updater
+
+Apply the Application manifest so ArgoCD reconciles the upstream `argocd-image-updater` install into the `argocd` namespace:
+
+```bash
+kubectl apply -f infrastructure/argocd-image-updater.yaml
+```
+
 ### Configure HTTPRoute Health Checks
 
 The Cloudflare Kubernetes Gateway controller doesn't populate HTTPRoute status, which causes ArgoCD to show applications using HTTPRoutes as "Progressing" indefinitely. To fix this, patch the ArgoCD ConfigMap to always consider HTTPRoutes healthy:
