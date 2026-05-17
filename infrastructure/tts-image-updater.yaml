@@ -14,10 +14,9 @@ spec:
           writeBackTarget: kustomization
       images:
         - alias: tts
-          imageName: ghcr.io/jspaulsen/tts
+          imageName: ghcr.io/jspaulsen/tts:main
           commonUpdateSettings:
             updateStrategy: digest
-            allowTags: regexp:^main$
           manifestTargets:
             kustomize:
               name: ghcr.io/jspaulsen/tts
