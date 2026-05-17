@@ -96,6 +96,25 @@ Apply the Application manifest so ArgoCD reconciles the upstream `argocd-image-u
 kubectl apply -f infrastructure/argocd-image-updater.yaml
 ```
 
+#### Apps tracked by image-updater
+
+`herald` and `tts` are managed as standalone Applications (rather than via the `applications` ApplicationSet) so they can carry per-app image-updater annotations. Apply them once:
+
+```bash
+kubectl apply -f infrastructure/herald-app.yaml
+kubectl apply -f infrastructure/tts-app.yaml
+```
+
+Image-updater writes new tags back to this git repo by editing each app's `kustomization.yaml`. Both standalone Application manifests are annotated to push via SSH (`git@github.com:jspaulsen/k8s-infra.git`) using a secret named `argocd-image-updater-ssh` in the `argocd` namespace. Create that secret from a private key that has push access to the repo:
+
+```bash
+kubectl create secret generic argocd-image-updater-ssh \
+  -n argocd \
+  --from-file=sshPrivateKey=$HOME/.ssh/id_ed25519
+```
+
+Make sure the matching public key is registered on the GitHub account (or as a deploy key on the repo) with write access. The image-updater pod mounts `argocd-ssh-known-hosts-cm` from the `argocd` namespace, so `github.com`'s host key is already trusted.
+
 ### Configure HTTPRoute Health Checks
 
 The Cloudflare Kubernetes Gateway controller doesn't populate HTTPRoute status, which causes ArgoCD to show applications using HTTPRoutes as "Progressing" indefinitely. To fix this, patch the ArgoCD ConfigMap to always consider HTTPRoutes healthy:

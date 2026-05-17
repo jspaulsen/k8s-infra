@@ -10,6 +10,10 @@ spec:
         revision: HEAD
         directories:
           - path: applications/*
+          - path: applications/herald
+            exclude: true
+          - path: applications/tts
+            exclude: true
   template:
     metadata:
       name: '{{path.basename}}'
