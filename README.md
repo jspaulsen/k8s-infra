@@ -117,6 +117,27 @@ kubectl create secret generic argocd-image-updater-ssh \
 
 Make sure the matching public key is registered on the GitHub account (or as a deploy key on the repo) with write access. The image-updater pod mounts `argocd-ssh-known-hosts-cm` from the `argocd` namespace, so `github.com`'s host key is already trusted.
 
+### Dynamic DNS (cloudflare-ddns)
+
+`vs.yeebs.dev` (the Vintage Story game server) needs a raw A record pointed at this
+host's dynamic public IP — it can't ride the Cloudflare Tunnel like the HTTP
+apps. The `cloudflare-ddns` app runs [`favonia/cloudflare-ddns`](https://github.com/favonia/cloudflare-ddns),
+which detects the public IPv4 every 5 minutes and updates the record.
+
+It's a normal `applications/*` app picked up by the ApplicationSet, but its
+Cloudflare API token lives in a manually-created secret (the `.env` is
+gitignored). Create it once from a token with `Zone.DNS:Edit` on `yeebs.dev`:
+
+```bash
+kubectl create namespace cloudflare-ddns
+kubectl create secret generic cloudflare-ddns-secrets \
+  -n cloudflare-ddns \
+  --from-env-file=applications/cloudflare-ddns/.env
+```
+
+where `applications/cloudflare-ddns/.env` contains `CF_API_TOKEN=...`. To track
+additional records, add them to `DOMAINS` in `cloudflare-ddns.yaml`.
+
 ### Configure HTTPRoute Health Checks
 
 The Cloudflare Kubernetes Gateway controller doesn't populate HTTPRoute status, which causes ArgoCD to show applications using HTTPRoutes as "Progressing" indefinitely. To fix this, patch the ArgoCD ConfigMap to always consider HTTPRoutes healthy:

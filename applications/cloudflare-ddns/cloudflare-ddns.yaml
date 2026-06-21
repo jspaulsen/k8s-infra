@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflare-ddns
+  namespace: cloudflare-ddns
+spec:
+  revisionHistoryLimit: 3
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: cloudflare-ddns
+  template:
+    metadata:
+      labels:
+        app: cloudflare-ddns
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+      containers:
+        - name: cloudflare-ddns
+          image: favonia/cloudflare-ddns:1.15.1
+          env:
+            # Cloudflare API token with Zone.DNS edit permission on yeebs.dev
+            - name: CF_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-ddns-secrets
+                  key: CF_API_TOKEN
+            # Domains whose A records track this host's dynamic public IPv4.
+            # vs.yeebs.dev = Vintage Story game server (raw IP; not behind the tunnel).
+            - name: DOMAINS
+              value: "vs.yeebs.dev"
+            # Game server needs the real IP, not Cloudflare's proxy.
+            - name: PROXIED
+              value: "false"
+            # Home connection is IPv4-only; don't try to manage AAAA records.
+            - name: IP6_PROVIDER
+              value: "none"
+            - name: TZ
+              value: "America/Los_Angeles"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
