@@ -98,16 +98,14 @@ kubectl apply -f infrastructure/argocd-image-updater.yaml
 
 #### Apps tracked by image-updater
 
-`herald` and `tts` are managed as standalone Applications (rather than via the `applications` ApplicationSet) so they aren't overwritten by the ApplicationSet template, and each has an accompanying `ImageUpdater` CR that tells the v1.x controller what images to watch. Apply them once:
+`herald` is managed as a standalone Application (rather than via the `applications` ApplicationSet) so it isn't overwritten by the ApplicationSet template, and has an accompanying `ImageUpdater` CR that tells the v1.x controller what images to watch. Apply both once:
 
 ```bash
 kubectl apply -f infrastructure/herald-app.yaml
-kubectl apply -f infrastructure/tts-app.yaml
 kubectl apply -f infrastructure/herald-image-updater.yaml
-kubectl apply -f infrastructure/tts-image-updater.yaml
 ```
 
-The controller writes new tags back to this git repo by editing each app's `kustomization.yaml`. Both `ImageUpdater` CRs push via SSH (`git@github.com:jspaulsen/k8s-infra.git`) using a secret named `argocd-image-updater-ssh` in the `argocd` namespace. Create that secret from a private key that has push access to the repo:
+The controller writes new tags back to this git repo by editing the app's `kustomization.yaml`. The `ImageUpdater` CR pushes via SSH (`git@github.com:jspaulsen/k8s-infra.git`) using a secret named `argocd-image-updater-ssh` in the `argocd` namespace. Create that secret from a private key that has push access to the repo:
 
 ```bash
 kubectl create secret generic argocd-image-updater-ssh \
