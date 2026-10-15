@@ -6,5 +6,5 @@ resources:
   - postgres-pvc.yaml
 images:
   - name: ghcr.io/jspaulsen/herald
-    newTag: sha-71ac34f717515d46945f41070141d08253ae2214
+    newTag: sha-f71ebf0bf6014b315b49b581c85d81e51483a1f3
     newName: ghcr.io/jspaulsen/herald
