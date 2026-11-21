@@ -11,6 +11,12 @@ A PR references a task by writing `vikunja#<id>` (or `Vikunja #<id>`, or
 - all closed, at least one merged  -> bucket "Done"
 - all closed, none merged          -> bucket "Backlog"
 
+A PR in a stack may merge into its parent's branch rather than the repo's
+default branch. Such a PR counts by where its code ended up: the script follows
+the chain of PRs (child -> the PR whose head is its base -> ...) and uses the
+state of the first PR that targets the default branch. So a child merged into
+an open parent stays "In review" until the parent merges.
+
 Each PR's link is commented on the task once. The script keeps no state: it
 reads the task's current bucket and comments before changing anything.
 
@@ -27,7 +33,8 @@ import logging
 import os
 import re
 import sys
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 
 import requests
@@ -41,6 +48,8 @@ BUCKET_REVIEW = "In review"
 BUCKET_DONE = "Done"
 BUCKET_BACKLOG = "Backlog"
 TIMEOUT = 30
+MAX_STACK_DEPTH = 20
+RETRY_DELAYS = (0.5, 1.0, 2.0)  # Vikunja on SQLite returns 500 "database is locked" under concurrent writes
 
 
 @dataclass(frozen=True)
@@ -51,6 +60,8 @@ class PullRequest:
     url: str
     state: str  # "open", "merged" or "closed"
     task_ids: frozenset[int]
+    base: str = ""
+    head: str = ""
 
 
 def parse_task_ids(*texts: str | None) -> frozenset[int]:
@@ -96,11 +107,59 @@ def fetch_pulls(session: requests.Session, repo: str, since: datetime) -> list[P
                     url=raw["html_url"],
                     state=pr_state,
                     task_ids=parse_task_ids(raw["title"], raw["body"]),
+                    base=raw["base"]["ref"],
+                    head=raw["head"]["ref"],
                 )
             else:
                 url = response.links.get("next", {}).get("url")
                 params = None
-    return list(seen.values())
+    return resolve_stacks(session, repo, list(seen.values()))
+
+
+def _to_pull(repo: str, raw: dict) -> PullRequest:
+    state = "open" if raw["state"] == "open" else "merged" if raw["merged_at"] else "closed"
+    return PullRequest(repo, raw["number"], raw["title"], raw["html_url"], state, frozenset(), raw["base"]["ref"], raw["head"]["ref"])
+
+
+def resolve_stacks(session: requests.Session, repo: str, pulls: list[PullRequest]) -> list[PullRequest]:
+    """Give each PR merged into a non-default branch the state of the PR chain it landed in."""
+    if not any(p.state == "merged" for p in pulls):
+        return pulls
+    response = session.get(f"https://api.github.com/repos/{repo}", timeout=TIMEOUT)
+    response.raise_for_status()
+    default = response.json()["default_branch"]
+    owner = repo.split("/")[0]
+    by_head: dict[str, PullRequest | None] = {}
+    for pull in sorted(pulls, key=lambda p: (p.state == "open", p.number)):
+        by_head[pull.head] = pull  # prefer an open PR, then the newest, for a reused branch name
+
+    def parent_of(branch: str) -> PullRequest | None:
+        if branch not in by_head:
+            response = session.get(
+                f"https://api.github.com/repos/{repo}/pulls",
+                params={"state": "all", "head": f"{owner}:{branch}", "per_page": 100},
+                timeout=TIMEOUT,
+            )
+            response.raise_for_status()
+            found = sorted((_to_pull(repo, raw) for raw in response.json()), key=lambda p: (p.state == "open", p.number))
+            by_head[branch] = found[-1] if found else None
+        return by_head[branch]
+
+    resolved = []
+    for pull in pulls:
+        state, current, chain = pull.state, pull, []
+        while state == "merged" and current.base != default:
+            parent = parent_of(current.base) if len(chain) < MAX_STACK_DEPTH else None
+            if parent is None or parent.number == pull.number or parent.number in chain:
+                logger.warning("%s#%d merged into %r, which has no PR toward %r; treating as open", repo, pull.number, current.base, default)
+                state = "open"
+                break
+            chain.append(parent.number)
+            current, state = parent, parent.state
+        if chain:
+            logger.info("%s#%d merged into %s#%s; counts as %s", repo, pull.number, repo, " -> #".join(map(str, chain)), state)
+        resolved.append(replace(pull, state=state) if state != pull.state else pull)
+    return resolved
 
 
 class VikunjaClient:
@@ -111,7 +170,12 @@ class VikunjaClient:
         self._kanban: dict[int, tuple[int, dict[str, int], dict[int, int]]] = {}
 
     def _request(self, method: str, path: str, **kwargs) -> dict | list | None:
-        response = self._session.request(method, f"{self._base}{path}", timeout=TIMEOUT, **kwargs)
+        for delay in (*RETRY_DELAYS, None):
+            response = self._session.request(method, f"{self._base}{path}", timeout=TIMEOUT, **kwargs)
+            if response.status_code < 500 or delay is None:
+                break
+            logger.info("%s %s: %d, retrying in %.1fs", method, path, response.status_code, delay)
+            time.sleep(delay)
         response.raise_for_status()
         return response.json() if response.text else None
 

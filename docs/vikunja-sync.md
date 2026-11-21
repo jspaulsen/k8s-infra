@@ -18,6 +18,13 @@ each repo in `REPOS`. For each referenced task:
 | All closed, at least one merged | Done          |
 | All closed, none merged         | Backlog       |
 
+**Stacks.** A PR merged into another PR's branch (not the repo's default branch)
+counts by where its code ended up: the script follows the chain of parent PRs
+down to the one targeting the default branch and uses that PR's state. A child
+merged into an open parent stays In review until the parent merges; a child of
+an abandoned parent counts as closed. A merged-into branch with no PR at all
+counts as open, with a warning in the log.
+
 It also comments each PR's link on its task once. It keeps no state; reruns are
 no-ops. The task's project needs kanban buckets named exactly `Backlog`,
 `In review` and `Done`, otherwise the task is skipped with a warning (the Hearth
@@ -59,7 +66,9 @@ kubectl -n vikunja delete job vikunja-sync-manual
 
 A healthy run logs `INFO N PRs read from 1 repos; M reference a task` and exits 0.
 A 401 from Vikunja or GitHub means a token is wrong or expired; recreate the
-Secret.
+Secret. Vikunja on SQLite sometimes answers 500 `database is locked` under
+concurrent writes; the script retries those a few times, and any write that
+still fails is redone on the next run.
 
 - **Add a repo:** append it to `REPOS` (comma-separated) in `cronjob.yaml` and
   make sure the GitHub token covers it. Vikunja task IDs are global, so one job
