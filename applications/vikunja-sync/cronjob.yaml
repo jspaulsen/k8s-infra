@@ -1,0 +1,48 @@
+# Moves Vikunja tasks across kanban buckets to match the GitHub PRs that
+# reference them (`vikunja#<id>`). See docs/vikunja-sync.md.
+# Secret `vikunja-sync` (GITHUB_TOKEN, VIKUNJA_TOKEN) is created by hand, not in git.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vikunja-sync
+  namespace: vikunja
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 240
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: sync
+              image: ghcr.io/astral-sh/uv:0.13.7-python3.12-trixie-slim
+              command: ["uv", "run", "--script", "/app/sync.py"]
+              env:
+                - name: UV_CACHE_DIR
+                  value: /tmp/uv-cache
+                - name: REPOS
+                  value: jspaulsen/hearth
+                - name: VIKUNJA_URL
+                  value: http://vikunja.vikunja.svc:3456/api/v2
+              envFrom:
+                - secretRef:
+                    name: vikunja-sync
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+              volumeMounts:
+                - name: script
+                  mountPath: /app
+                  readOnly: true
+          volumes:
+            - name: script
+              configMap:
+                name: vikunja-sync-script
