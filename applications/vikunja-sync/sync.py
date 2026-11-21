@@ -4,8 +4,8 @@
 # ///
 """Move Vikunja tasks across kanban buckets to match the GitHub PRs that reference them.
 
-A PR references a task by writing `vikunja#<id>` in its title or body. For each
-referenced task, across all of its PRs:
+A PR references a task by writing `vikunja#<id>` (or `Vikunja #<id>`, or
+`Vikunja: [#<id>](<link>)`) in its title or body. For each referenced task, across all of its PRs:
 
 - any PR open                      -> bucket "In review"
 - all closed, at least one merged  -> bucket "Done"
@@ -34,7 +34,9 @@ import requests
 
 logger = logging.getLogger("vikunja-sync")
 
-TASK_REF = re.compile(r"\bvikunja#(\d+)\b", re.IGNORECASE)
+# Matches "vikunja#4", "Vikunja #30" and "Vikunja: [#4](http://vikunja.lan/tasks/4)",
+# but not a bare task link like "[#25](http://vikunja.lan/tasks/25)".
+TASK_REF = re.compile(r"\bvikunja:?\s*\[?#(\d+)\b", re.IGNORECASE)
 BUCKET_REVIEW = "In review"
 BUCKET_DONE = "Done"
 BUCKET_BACKLOG = "Backlog"

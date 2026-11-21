@@ -6,7 +6,9 @@ script are in `applications/vikunja-sync/`.
 
 ## How it works
 
-A PR references a task by writing `vikunja#<id>` in its title or body. Each run
+A PR references a task by writing `vikunja#<id>` in its title or body; `Vikunja #<id>`
+and `Vikunja: [#<id>](<link>)` also count, but a bare task link such as
+`[#25](http://vikunja.lan/tasks/25)` does not (those are usually follow-ups). Each run
 reads every open PR, plus PRs closed in the last `LOOKBACK_DAYS` (default 7), from
 each repo in `REPOS`. For each referenced task:
 
